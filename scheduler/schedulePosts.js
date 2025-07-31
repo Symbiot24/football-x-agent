@@ -17,23 +17,28 @@ async function scheduleDailyPosts() {
       postCount++;
 
       console.log(`✅ Tweet #${postCount} posted`);
-
-      if (postCount < POST_COUNT) {
-        console.log(`📅 Next tweet in ${GAP_HOURS} hours`);
-        setTimeout(postTweet, GAP_MS);
-      } else {
-        console.log(`🔁 All ${POST_COUNT} tweets done. Waiting 24 hours for the next cycle.`);
-        setTimeout(() => {
-          postCount = 0;
-          scheduleDailyPosts();
-        }, 24 * 60 * 60 * 1000); // 24 hours
-      }
     } catch (err) {
       console.error('❌ Error posting tweet:', err);
+    }
+
+    if (postCount < POST_COUNT) {
+      console.log(`📅 Next tweet in ${GAP_HOURS} hours`);
+      setTimeout(postTweet, GAP_MS);
+    } else {
+      console.log(`🔁 All ${POST_COUNT} tweets done. Waiting 24 hours for the next cycle.`);
+      setTimeout(() => {
+        postCount = 0;
+        scheduleDailyPosts();
+      }, 24 * 60 * 60 * 1000); // 24 hours
     }
   }
 
   postTweet();
 }
+
+// Handle unhandled promise rejections globally
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection:', reason);
+});
 
 module.exports = scheduleDailyPosts;
