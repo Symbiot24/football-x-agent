@@ -62,4 +62,3 @@ jobs:
           app-name: 'football-agent'
           slot-name: 'Production'
           package: .
-          
