@@ -2,48 +2,84 @@ const axios = require("axios");
 
 const NEWS_API = "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/news";
 
-// Broader football-related keywords
-const KEYWORDS = [
-  "Messi", "Ronaldo", "Barcelona", "Real Madrid", "Premier League", "Champions League",
-  "Arsenal", "Manchester United", "Chelsea", "Liverpool", "Transfer", "Injury", "Goal",
-  "Fixture", "Stats", "Debate", "Rumor", "La Liga", "Football", "Soccer"
-];
+// High-Engagement Keywords (Priority)
+const HIGH_PRIORITY = ["Here we go", "Breaking", "Exclusive", "Official", "Done deal", "Agreement", "Medical"];
+
+const KEYWORDS = {
+  // THE TITANS (Highest Engagement)
+  superstars: [
+    "Mbappe", "Haaland", "Lamine Yamal", "Bellingham", "Vinicius", 
+    "Salah", "Palmer", "Saka", "Musiala", "Wirtz", "Rodri", "Kevin De Bruyne", "Kane", "Lewandowski", "Rashford", 
+    "Foden", "Pedri", "Gavi", "Lautaro Martinez", "Cubarsi", "Vitinha", "Nuno Mendes",
+    "Dembele", "Rice", "Van dijk", "Alisson", "Ederson", "Son Heung-min",
+  ],
+  
+  // THE LEGENDS (Never-ending GOAT debate/Nostalgia)
+  legends: ["Messi", "Ronaldo", "Neymar", "Zidane", "Ronaldinho", "Pirlo", "Totti", "Buffon", "Xavi", "Iniesta", "Shevchenko", "Henry", "Giggs", "Scholes", "Pele", "Maradona"],
+  
+  // TOP CLUBS (Global Fanbases)
+  clubs: [
+    "Real Madrid", "Man City", "Arsenal", "Liverpool", "Barcelona", 
+    "Man Utd", "Bayern Munich", "PSG", "Chelsea", "Inter Milan", "Juventus", "Bayer Leverkusen", "AC Milan", "Tottenham", "Atletico Madrid"
+  ],
+  
+  // TOP MANAGERS (Tactics & Drama)
+  managers: [
+    "Guardiola", "Arne Slot", "Xabi Alonso", "Hansi Flick", "Mikel Arteta", 
+    "Carlo Ancelotti", "Mourinho", "Luis Enrique", "Thomas Tuchel", "Unai Emery",
+    "Jurgen Klopp", "Ten Hag", "Zidane", "Pochettino",
+    "Diego Simeone", "Antonio Conte", "Gatuso"
+  ],
+  
+  // COMPETITIONS (Urgency)
+  tournaments: [
+    "Champions League", "Premier League", "La Liga", "Serie A", 
+    "Bundesliga", "Club World Cup", "World Cup Qualifiers", "Ballon d'Or", "Golden Boot", "Europa League", "Conference League", "FA Cup", "Copa America", "Africa Cup of Nations",
+    "Copa Libertadores", "UEFA Super Cup", "FIFA World Cup", "UEFA Euro", "Ligue 1"
+  ]
+};
+
+// Flatten for your filter logic
+const STANDARD_KEYWORDS = [].concat(...Object.values(KEYWORDS));
 
 async function fetchFootballNews() {
   try {
     const response = await axios.get(NEWS_API);
     const articles = response.data.articles || [];
 
-    if (!articles.length) {
-      throw new Error("No articles returned from ESPN API");
-    }
+    if (!articles.length) throw new Error("No articles found");
 
-    // Filter relevant football news
-    let filtered = articles.filter(article =>
-      KEYWORDS.some(kw =>
-        article.headline?.toLowerCase().includes(kw.toLowerCase()) ||
-        article.description?.toLowerCase().includes(kw.toLowerCase())
-      )
-    );
+    // 1. Map articles with a "Priority Score"
+    const scoredArticles = articles.map(article => {
+      let score = 0;
+      const text = `${article.headline} ${article.description}`.toLowerCase();
+      
+      HIGH_PRIORITY.forEach(kw => { if (text.includes(kw.toLowerCase())) score += 10; });
+      STANDARD_KEYWORDS.forEach(kw => { if (text.includes(kw.toLowerCase())) score += 2; });
+      
+      return { ...article, score };
+    });
 
-    // If no match, fallback to all articles
-    if (!filtered.length) {
-      console.warn("⚠️ No articles matched filters, using fallback");
-      filtered = articles;
-    }
+    // 2. Sort by score (descending) and take top 5 to pick one
+    const topArticles = scoredArticles
+      .filter(a => a.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
 
-    // Pick a random article
-    const randomArticle = filtered[Math.floor(Math.random() * filtered.length)];
+    const selection = topArticles.length > 0 
+      ? topArticles[Math.floor(Math.random() * topArticles.length)] 
+      : articles[0]; // Fallback to latest
 
     return {
-      title: randomArticle.headline || "Breaking Football News",
-      description: randomArticle.description || "",
-      link: randomArticle.links?.web?.href || "",
-      image: randomArticle.images?.[0]?.url || null
+      title: selection.headline,
+      description: selection.description,
+      link: selection.links?.web?.href,
+      image: selection.images?.[0]?.url,
+      isBreaking: selection.score >= 10
     };
   } catch (error) {
-    console.error("❌ Error fetching news:", error);
-    throw new Error("No targeted football news found.");
+    console.error("❌ Error:", error);
+    return null;
   }
 }
 
