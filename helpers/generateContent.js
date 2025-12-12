@@ -6,7 +6,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 async function generateWithGroq(title, source) {
   try {
     const prompt = `
-Create a highly engaging football tweet (under 240 characters) about this news headline: "${title}"
+Create a highly engaging football tweet (between 250 - 1000 characters based on news) about this news headline: "${title}"
 
 Guidelines:
 - Make it punchy and scroll-stopping.
