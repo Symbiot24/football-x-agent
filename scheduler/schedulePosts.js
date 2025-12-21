@@ -3,7 +3,7 @@ const fetchFootballNews = require('../helpers/fetchNews');
 const generateContent = require('../helpers/generateContent');
 
 const POST_COUNT = 24;
-const GAP_HOURS = 1; // Changed from 5 to 1
+const GAP_HOURS = 3; 
 const GAP_MS = GAP_HOURS * 60 * 60 * 1000;
 
 async function scheduleDailyPosts() {
